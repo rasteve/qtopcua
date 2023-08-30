@@ -492,6 +492,8 @@ private slots:
     void connectAndDisconnect();
     defineDataMethod(checkSessionLocaleIds_data)
     void checkSessionLocaleIds();
+    defineDataMethod(connectionSettings_data)
+    void connectionSettings();
 
     // Password
     defineDataMethod(connectInvalidPassword_data)
@@ -963,6 +965,29 @@ void Tst_QOpcUaClient::checkSessionLocaleIds()
         READ_MANDATORY_VARIABLE_NODE(node);
         QCOMPARE(node->valueAttribute(), QOpcUaLocalizedText("fr", "Bonjour"));
     }
+}
+
+void Tst_QOpcUaClient::connectionSettings()
+{
+    QFETCH(QOpcUaClient *, opcuaClient);
+
+    QOpcUaConnectionSettings resetSettings;
+    resetSettings.setSessionLocaleIds({ "en" });
+    opcuaClient->setConnectionSettings(resetSettings);
+
+    OpcuaConnector connector(opcuaClient, m_endpoint);
+
+    QScopedPointer<QOpcUaNode> node(opcuaClient->node("ns=2;s=LocalizedTextWithCallback"));
+    QVERIFY(node != nullptr);
+    READ_MANDATORY_VARIABLE_NODE(node);
+    QCOMPARE(node->valueAttribute(), QOpcUaLocalizedText("en", "Hello"));
+
+    auto settings = opcuaClient->connectionSettings();
+    settings.setSessionLocaleIds({ "de" });
+    opcuaClient->setConnectionSettings(settings);
+
+    READ_MANDATORY_VARIABLE_NODE(node);
+    QCOMPARE(node->valueAttribute(), QOpcUaLocalizedText("de", "Guten Tag"));
 }
 
 void Tst_QOpcUaClient::connectInvalidPassword()

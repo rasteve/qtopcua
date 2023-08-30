@@ -26,6 +26,8 @@ public Q_SLOTS:
     void disconnectFromEndpoint();
     void requestEndpoints(const QUrl &url);
 
+    void handleConnectionSettingsChanged(const QOpcUaConnectionSettings &settings);
+
     // Node functions
     void browse(quint64 handle, UA_NodeId id, const QOpcUaBrowseRequest &request);
     void readAttributes(quint64 handle, UA_NodeId id, QOpcUa::NodeAttributes attr, QString indexRange);
@@ -120,6 +122,8 @@ private:
     double m_minPublishingInterval;
 
     UA_Logger m_open62541Logger {open62541LogHandler, nullptr, nullptr};
+
+    QOpcUaConnectionSettings m_currentConnectionSettings;
 
     // Async contexts
 

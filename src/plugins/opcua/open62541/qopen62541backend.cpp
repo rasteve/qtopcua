@@ -40,6 +40,9 @@ Open62541AsyncBackend::Open62541AsyncBackend(QOpen62541Client *parent)
     m_clientIterateOnDemandTimer.setSingleShot(true);
     QObject::connect(&m_clientIterateOnDemandTimer, &QTimer::timeout,
                      this, &Open62541AsyncBackend::iterateClient);
+
+    QObject::connect(parent, &QOpcUaClientImpl::connectionSettingsChanged,
+                     this, &Open62541AsyncBackend::handleConnectionSettingsChanged);
 }
 
 Open62541AsyncBackend::~Open62541AsyncBackend()
@@ -1049,7 +1052,7 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
 
     const auto identity = m_clientImpl->m_client->applicationIdentity();
     const auto authInfo = m_clientImpl->m_client->authenticationInformation();
-    const auto connectionSettings = m_clientImpl->m_client->connectionSettings();
+    m_currentConnectionSettings = m_clientImpl->m_client->connectionSettings();
 #ifdef UA_ENABLE_ENCRYPTION
     const auto pkiConfig = m_clientImpl->m_client->pkiConfiguration();
 #endif
@@ -1129,11 +1132,11 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
     }
 
     using Timeout_t = decltype(conf->timeout);
-    conf->timeout = qt_saturate<Timeout_t>(connectionSettings.connectTimeout().count());
-    conf->secureChannelLifeTime = qt_saturate<Timeout_t>(connectionSettings.secureChannelLifeTime().count());
-    conf->requestedSessionTimeout = qt_saturate<Timeout_t>(connectionSettings.sessionTimeout().count());
+    conf->timeout = qt_saturate<Timeout_t>(m_currentConnectionSettings.connectTimeout().count());
+    conf->secureChannelLifeTime = qt_saturate<Timeout_t>(m_currentConnectionSettings.secureChannelLifeTime().count());
+    conf->requestedSessionTimeout = qt_saturate<Timeout_t>(m_currentConnectionSettings.sessionTimeout().count());
 
-    const auto sessionLocaleIds = connectionSettings.sessionLocaleIds();
+    const auto sessionLocaleIds = m_currentConnectionSettings.sessionLocaleIds();
     if (!sessionLocaleIds.isEmpty()) {
         conf->sessionLocaleIds = static_cast<UA_String *>(UA_Array_new(sessionLocaleIds.size(), &UA_TYPES[UA_TYPES_STRING]));
         for (qsizetype i = 0; i < sessionLocaleIds.size(); ++i)
@@ -1215,7 +1218,7 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
         return;
     }
 
-    conf->timeout = qt_saturate<Timeout_t>(connectionSettings.requestTimeout().count());
+    conf->timeout = qt_saturate<Timeout_t>(m_currentConnectionSettings.requestTimeout().count());
 
     // Attach the client state callback after the successful connect
     conf->stateCallback = clientStateCallback;
@@ -1290,6 +1293,58 @@ void Open62541AsyncBackend::requestEndpoints(const QUrl &url)
     emit endpointsRequestFinished(ret, static_cast<QOpcUa::UaStatusCode>(res), url);
 
     UA_Client_delete(tmpClient);
+}
+
+void Open62541AsyncBackend::handleConnectionSettingsChanged(const QOpcUaConnectionSettings &settings)
+{
+    // If there is no client, the settings will be applied during the next connectToEndpoint() call
+    if (m_uaclient) {
+        if (m_currentConnectionSettings.requestTimeout() != settings.requestTimeout()) {
+            qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Changing the request timeout for an established connection is not supported."
+                                                  << "The change will be active after the next connectToEndpoint() call.";
+        }
+
+        if (m_currentConnectionSettings.secureChannelLifeTime() != settings.secureChannelLifeTime()) {
+            qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Changing the secure channel lifetime for an established connection is not supported."
+                                                  << "The change will be active after the next connectToEndpoint() call.";
+        }
+
+        if (m_currentConnectionSettings.sessionTimeout() != settings.sessionTimeout()) {
+            qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Changing the session timeout for an established connection is not supported."
+                                                  << "The change will be active after the next connectToEndpoint() call.";
+        }
+
+        if (m_currentConnectionSettings.connectTimeout() != settings.connectTimeout()) {
+            qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Changing the connect timeout for an established connection is not supported."
+                                                  << "The change will be active after the next connectToEndpoint() call.";
+        }
+
+        if (m_currentConnectionSettings.sessionLocaleIds() != settings.sessionLocaleIds()) {
+            const auto conf = UA_Client_getConfig(m_uaclient);
+
+            if (conf->sessionLocaleIdsSize) {
+                UA_Array_delete(conf->sessionLocaleIds, conf->sessionLocaleIdsSize, &UA_TYPES[UA_TYPES_LOCALEID]);
+                conf->sessionLocaleIdsSize = 0;
+            }
+
+            if (!settings.sessionLocaleIds().isEmpty()) {
+                const auto sessionLocaleIds = settings.sessionLocaleIds();
+                conf->sessionLocaleIds = static_cast<UA_String *>(UA_Array_new(sessionLocaleIds.size(), &UA_TYPES[UA_TYPES_STRING]));
+                for (qsizetype i = 0; i < sessionLocaleIds.size(); ++i)
+                    conf->sessionLocaleIds[i] = UA_STRING_ALLOC(sessionLocaleIds[i].toUtf8().constData());
+                conf->sessionLocaleIdsSize = sessionLocaleIds.size();
+            }
+
+            const auto result = UA_Client_activateCurrentSession(m_uaclient);
+            if (result != UA_STATUSCODE_GOOD) {
+                qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Changing the session locale Ids failed with" << UA_StatusCode_name(result);
+            } else {
+                qCInfo(QT_OPCUA_PLUGINS_OPEN62541) << "The session locale ids were updated to" << settings.sessionLocaleIds().join(QChar::fromLatin1(' '));
+            }
+        }
+
+        m_currentConnectionSettings = settings;
+    }
 }
 
 void Open62541AsyncBackend::iterateClient()
