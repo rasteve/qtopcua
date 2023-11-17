@@ -1162,41 +1162,63 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
     conf->securityPolicyUri = UA_STRING_ALLOC(endpoint.securityPolicy().toUtf8().constData());
     conf->securityMode = static_cast<UA_MessageSecurityMode>(endpoint.securityMode());
 
-    UA_StatusCode ret;
+    UA_StatusCode ret = UA_STATUSCODE_BADINTERNALERROR;
+    bool retry = false;
 
-    if (authInfo.authenticationType() == QOpcUaUserTokenPolicy::TokenType::Anonymous) {
-        ret = UA_Client_connect(m_uaclient, endpoint.endpointUrl().toUtf8().constData());
-    } else if (authInfo.authenticationType() == QOpcUaUserTokenPolicy::TokenType::Username) {
+    do {
+        retry = false;
 
-        bool suitableTokenFound = false;
-        const auto userIdentityTokens = endpoint.userIdentityTokens();
-        for (const auto &token : userIdentityTokens) {
-            if (token.tokenType() == QOpcUaUserTokenPolicy::Username &&
-                (token.securityPolicy().isEmpty() || m_clientImpl->supportedSecurityPolicies().contains(token.securityPolicy()))) {
-                suitableTokenFound = true;
-                break;
+        if (authInfo.authenticationType() == QOpcUaUserTokenPolicy::TokenType::Anonymous) {
+            ret = UA_Client_connect(m_uaclient, endpoint.endpointUrl().toUtf8().constData());
+        } else if (authInfo.authenticationType() == QOpcUaUserTokenPolicy::TokenType::Username) {
+
+            bool suitableTokenFound = false;
+            const auto userIdentityTokens = endpoint.userIdentityTokens();
+            for (const auto &token : userIdentityTokens) {
+                if (token.tokenType() == QOpcUaUserTokenPolicy::Username &&
+                    (token.securityPolicy().isEmpty() || m_clientImpl->supportedSecurityPolicies().contains(token.securityPolicy()))) {
+                    suitableTokenFound = true;
+                    break;
+                }
             }
-        }
 
-        if (!suitableTokenFound) {
-            qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "No suitable user token policy found";
-            emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::ClientError::NoError);
+            if (!suitableTokenFound) {
+                qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "No suitable user token policy found";
+                emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::ClientError::NoError);
+                UA_Client_delete(m_uaclient);
+                m_uaclient = nullptr;
+                return;
+            }
+
+            const auto credentials = authInfo.authenticationData().value<QPair<QString, QString>>();
+            ret = UA_Client_connectUsername(m_uaclient, endpoint.endpointUrl().toUtf8().constData(),
+                                             credentials.first.toUtf8().constData(), credentials.second.toUtf8().constData());
+        } else {
+            emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::UnsupportedAuthenticationInformation);
+            qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Failed to connect: Selected authentication type"
+                                              << authInfo.authenticationType() << "is not supported.";
             UA_Client_delete(m_uaclient);
             m_uaclient = nullptr;
             return;
         }
 
-        const auto credentials = authInfo.authenticationData().value<QPair<QString, QString>>();
-        ret = UA_Client_connectUsername(m_uaclient, endpoint.endpointUrl().toUtf8().constData(),
-                                         credentials.first.toUtf8().constData(), credentials.second.toUtf8().constData());
-    } else {
-        emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::UnsupportedAuthenticationInformation);
-        qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Failed to connect: Selected authentication type"
-                                          << authInfo.authenticationType() << "is not supported.";
-        UA_Client_delete(m_uaclient);
-        m_uaclient = nullptr;
-        return;
-    }
+#ifdef UA_ENABLE_ENCRYPTION
+        if (ret == UA_STATUSCODE_BADCERTIFICATEUNTRUSTED) {
+            QOpcUaErrorState errorState;
+            errorState.setClientSideError(true);
+            errorState.setConnectionStep(QOpcUaErrorState::ConnectionStep::CertificateValidation);
+            errorState.setErrorCode(QOpcUa::UaStatusCode::BadCertificateUntrusted);
+
+            emit QOpcUaBackend::connectError(&errorState);
+
+            if (errorState.ignoreError()) {
+                // Use the AcceptAll certificate verification
+                UA_CertificateVerification_AcceptAll(&conf->certificateVerification);
+                retry = true;
+            }
+        }
+#endif
+    } while (retry);
 
     if (ret != UA_STATUSCODE_GOOD) {
         UA_Client_delete(m_uaclient);

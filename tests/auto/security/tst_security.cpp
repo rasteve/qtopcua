@@ -5,6 +5,7 @@
 #include <QtOpcUa/QOpcUaClient>
 #include <QtOpcUa/QOpcUaEndpointDescription>
 #include <QtOpcUa/QOpcUaProvider>
+#include <QtOpcUa/QOpcUaErrorState>
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QProcess>
@@ -119,6 +120,9 @@ private slots:
 
     defineDataMethod(connectAndDisconnectSecureEncryptedKey_data)
     void connectAndDisconnectSecureEncryptedKey();
+
+    defineDataMethod(connectAndDisconnectSecureIgnoreUntrusted_data)
+    void connectAndDisconnectSecureIgnoreUntrusted();
 
 private:
     QString envOrDefault(const char *env, QString def)
@@ -401,6 +405,79 @@ void Tst_QOpcUaSecurity::connectAndDisconnectSecureEncryptedKey()
     QCOMPARE(connectSpy.size(), 2);
     QCOMPARE(connectSpy.at(0).at(0), QOpcUaClient::Closing);
     QCOMPARE(connectSpy.at(1).at(0), QOpcUaClient::Disconnected);
+}
+
+void Tst_QOpcUaSecurity::connectAndDisconnectSecureIgnoreUntrusted()
+{
+    if (m_endpoints.size() == 0)
+        QSKIP("No secure endpoints available");
+
+    QFETCH(QString, backend);
+    QFETCH(QOpcUaEndpointDescription, endpoint);
+
+    QScopedPointer<QOpcUaClient> client(m_opcUa.createClient(backend));
+    QVERIFY2(client, QStringLiteral("Loading backend failed: %1").arg(backend).toLatin1().data());
+
+    if (!client->supportedSecurityPolicies().contains(endpoint.securityPolicy())) {
+        QSKIP(QStringLiteral("This test is skipped because backend %1 "
+                             "does not support security policy %2")
+                  .arg(client->backend(), endpoint.securityPolicy()).toLatin1().constData());
+    }
+
+    // Extract to a new path and remove the test server cert
+    // This will make the connection fail with BadCertificateUntrusted
+    auto tempPkiDir = QTest::qExtractTestData("pki");
+    QDir pkiDir(tempPkiDir->path());
+    QVERIFY(pkiDir.cd("trusted"));
+    QVERIFY(pkiDir.cd("certs"));
+    QVERIFY(pkiDir.remove("open62541-testserver.der"));
+
+    const QString pkidir = tempPkiDir->path();
+    QOpcUaPkiConfiguration pkiConfig;
+    pkiConfig.setClientCertificateFile(pkidir + "/own/certs/tst_security.der");
+    pkiConfig.setPrivateKeyFile(pkidir + "/own/private/privateKeyWithoutPassword.pem");
+    pkiConfig.setTrustListDirectory(pkidir + "/trusted/certs");
+    pkiConfig.setRevocationListDirectory(pkidir + "/trusted/crl");
+    pkiConfig.setIssuerListDirectory(pkidir + "/issuers/certs");
+    pkiConfig.setIssuerRevocationListDirectory(pkidir + "/issuers/crl");
+
+    const auto identity = pkiConfig.applicationIdentity();
+    QOpcUaAuthenticationInformation authInfo;
+    authInfo.setUsernameAuthentication("user1", "password");
+
+    client->setAuthenticationInformation(authInfo);
+    client->setApplicationIdentity(identity);
+    client->setPkiConfiguration(pkiConfig);
+
+    qDebug() << "Testing security policy" << endpoint.securityPolicy();
+    QSignalSpy connectSpy(client.data(), &QOpcUaClient::stateChanged);
+    bool errorStateReported = false;
+
+    connect(client.data(), &QOpcUaClient::connectError,
+            this, [&](QOpcUaErrorState *errorState) {
+                if (errorState->connectionStep() == QOpcUaErrorState::ConnectionStep::CertificateValidation) {
+                    errorState->setIgnoreError(true);
+                    errorStateReported = true;
+                }
+            });
+
+    client->connectToEndpoint(endpoint);
+    connectSpy.wait(signalSpyTimeout);
+    if (client->state() == QOpcUaClient::Connecting)
+        connectSpy.wait(signalSpyTimeout);
+
+    QCOMPARE(connectSpy.size(), 2);
+    QCOMPARE(connectSpy.at(0).at(0).value<QOpcUaClient::ClientState>(), QOpcUaClient::Connecting);
+    QCOMPARE(connectSpy.at(1).at(0).value<QOpcUaClient::ClientState>(), QOpcUaClient::Connected);
+
+    QVERIFY(errorStateReported);
+
+    connectSpy.clear();
+    client->disconnectFromEndpoint();
+    connectSpy.wait(signalSpyTimeout);
+    QCOMPARE(connectSpy.size(), 2);
+    QCOMPARE(connectSpy.at(0).at(0).value<QOpcUaClient::ClientState>(), QOpcUaClient::Closing);
+    QCOMPARE(connectSpy.at(1).at(0).value<QOpcUaClient::ClientState>(), QOpcUaClient::Disconnected);
 }
 
 void Tst_QOpcUaSecurity::cleanupTestCase()
