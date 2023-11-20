@@ -152,6 +152,19 @@ void QOpcUaAuthenticationInformation::setCertificateAuthentication()
 }
 
 /*!
+    \since 6.9
+
+    Sets the authentication method to certificate authentication with a
+    certificate different from the client certificate.
+*/
+void QOpcUaAuthenticationInformation::setCertificateAuthentication(const QString &certificatePath,
+                                                                   const QString &privateKeyPath)
+{
+    data->authenticationType = QOpcUaUserTokenPolicy::TokenType::Certificate;
+    data->authenticationData = QVariant::fromValue(QPair<QString, QString>(certificatePath, privateKeyPath));
+}
+
+/*!
     The content of the \l QVariant returned by this method depends on the currently selected authentication method.
  */
 const QVariant &QOpcUaAuthenticationInformation::authenticationData() const

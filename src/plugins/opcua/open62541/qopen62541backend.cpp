@@ -1057,6 +1057,25 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
     const auto pkiConfig = m_clientImpl->m_client->pkiConfiguration();
 #endif
 
+#ifndef UA_ENABLE_ENCRYPTION
+    if (authInfo.authenticationType() == QOpcUaUserTokenPolicy::TokenType::Certificate) {
+        qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "The open62541 plugin has been built without encryption support,"
+                                                 "certificate auth is not supported";
+        emit stateAndOrErrorChanged(QOpcUaClient::Disconnected,
+                                    QOpcUaClient::ClientError::UnsupportedAuthenticationInformation);
+        return;
+    }
+#else
+    if (authInfo.authenticationType() == QOpcUaUserTokenPolicy::TokenType::Certificate) {
+        if (!authInfo.authenticationData().isValid() && !pkiConfig.isKeyAndCertificateFileSet()) {
+            qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Unable to do certificate auth when no certificate is set";
+            emit stateAndOrErrorChanged(QOpcUaClient::Disconnected,
+                                        QOpcUaClient::ClientError::UnsupportedAuthenticationInformation);
+            return;
+        }
+    }
+#endif
+
 #ifdef UA_ENABLE_ENCRYPTION
     if (pkiConfig.isPkiValid()) {
         UA_ByteString localCertificate;
@@ -1193,6 +1212,64 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
             const auto credentials = authInfo.authenticationData().value<QPair<QString, QString>>();
             ret = UA_Client_connectUsername(m_uaclient, endpoint.endpointUrl().toUtf8().constData(),
                                              credentials.first.toUtf8().constData(), credentials.second.toUtf8().constData());
+        } else if (authInfo.authenticationType() == QOpcUaUserTokenPolicy::TokenType::Certificate) {
+#ifdef UA_ENABLE_ENCRYPTION
+            QString certPath;
+            QString keyPath;
+
+            if (authInfo.authenticationData().canConvert<QPair<QString, QString>>()) {
+                const auto authPaths = authInfo.authenticationData().value<QPair<QString, QString>>();
+
+                if (authPaths.first.isEmpty() || authPaths.second.isEmpty()) {
+                    qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Certificate and private key path must be set for certificate auth";
+                    emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::ClientError::UnsupportedAuthenticationInformation);
+                    UA_Client_delete(m_uaclient);
+                    m_uaclient = nullptr;
+                    return;
+                }
+
+                certPath = authPaths.first;
+                keyPath = authPaths.second;
+            } else {
+                certPath = pkiConfig.clientCertificateFile();
+                keyPath = pkiConfig.privateKeyFile();
+            }
+
+            UA_ByteString cert = UA_BYTESTRING_NULL;
+            UA_ByteString key = UA_BYTESTRING_NULL;
+
+            if (!loadFileToByteString(certPath, &cert)) {
+                qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Failed to load certificate for certificate auth";
+                emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::ClientError::UnsupportedAuthenticationInformation);
+                UA_Client_delete(m_uaclient);
+                m_uaclient = nullptr;
+                return;
+            }
+
+            UaDeleter<UA_ByteString> certDeleter(&cert, &UA_ByteString_clear);
+
+            if (!loadFileToByteString(keyPath, &key)) {
+                qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Failed to load private key for certificate auth";
+                emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::ClientError::UnsupportedAuthenticationInformation);
+                UA_Client_delete(m_uaclient);
+                m_uaclient = nullptr;
+                return;
+            }
+
+            UaDeleter<UA_ByteString> keyDeleter(&key, &UA_ByteString_clear);
+
+            const auto result = UA_ClientConfig_setAuthenticationCert(conf, cert, key);
+
+            if (result != UA_STATUSCODE_GOOD) {
+                qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Failed to initialize certificate auth:" << UA_StatusCode_name(result);
+                emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::ClientError::UnsupportedAuthenticationInformation);
+                UA_Client_delete(m_uaclient);
+                m_uaclient = nullptr;
+                return;
+            }
+
+            ret = UA_Client_connect(m_uaclient, endpoint.endpointUrl().toUtf8().constData());
+#endif
         } else {
             emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::UnsupportedAuthenticationInformation);
             qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Failed to connect: Selected authentication type"
