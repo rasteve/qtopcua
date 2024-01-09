@@ -112,6 +112,10 @@ private:
 
     void disconnectInternal(QOpcUaClient::ClientError error = QOpcUaClient::ClientError::NoError);
 
+#ifdef UA_ENABLE_ENCRYPTION
+    bool loadPrivateKeyWithPotentialPassword(const QString &privateKeyPath, UA_ByteString &privateKey);
+#endif
+
     QTimer m_clientIterateTimer;
     QTimer m_clientIterateOnDemandTimer;
 

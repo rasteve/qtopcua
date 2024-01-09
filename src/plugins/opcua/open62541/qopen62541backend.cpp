@@ -1077,9 +1077,11 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
 #endif
 
 #ifdef UA_ENABLE_ENCRYPTION
+    UA_ByteString privateKey = UA_BYTESTRING_NULL;
+    UaDeleter<UA_ByteString> privateKeyDeleter(&privateKey, &UA_ByteString_clear);
+
     if (pkiConfig.isPkiValid()) {
         UA_ByteString localCertificate;
-        UA_ByteString privateKey;
         UA_ByteString *trustList = nullptr;
         qsizetype trustListSize = 0;
         UA_ByteString *revocationList = nullptr;
@@ -1097,7 +1099,7 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
 
         UaDeleter<UA_ByteString> clientCertDeleter(&localCertificate, &UA_ByteString_clear);
 
-        success = loadFileToByteString(pkiConfig.privateKeyFile(), &privateKey);
+        success = loadPrivateKeyWithPotentialPassword(pkiConfig.privateKeyFile(), privateKey);
 
         if (!success) {
             qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Failed to load private key";
@@ -1106,8 +1108,6 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
             m_uaclient = nullptr;
             return;
         }
-
-        UaDeleter<UA_ByteString> privateKeyDeleter(&privateKey, &UA_ByteString_clear);
 
         success = loadAllFilesInDirectory(pkiConfig.trustListDirectory(), &trustList, &trustListSize);
 
@@ -1248,7 +1248,9 @@ void Open62541AsyncBackend::connectToEndpoint(const QOpcUaEndpointDescription &e
 
             UaDeleter<UA_ByteString> certDeleter(&cert, &UA_ByteString_clear);
 
-            if (!loadFileToByteString(keyPath, &key)) {
+            if (keyPath == pkiConfig.privateKeyFile()) {
+                UA_ByteString_copy(&privateKey, &key);
+            } else if (!loadPrivateKeyWithPotentialPassword(keyPath, key)) {
                 qCWarning(QT_OPCUA_PLUGINS_OPEN62541) << "Failed to load private key for certificate auth";
                 emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, QOpcUaClient::ClientError::UnsupportedAuthenticationInformation);
                 UA_Client_delete(m_uaclient);
@@ -2130,6 +2132,47 @@ void Open62541AsyncBackend::disconnectInternal(QOpcUaClient::ClientError error)
         emit stateAndOrErrorChanged(QOpcUaClient::Disconnected, error);
     }
 }
+
+#ifdef UA_ENABLE_ENCRYPTION
+bool Open62541AsyncBackend::loadPrivateKeyWithPotentialPassword(const QString &privateKeyPath, UA_ByteString &privateKey)
+{
+    UA_ByteString privateKeyData = UA_BYTESTRING_NULL;
+    const auto guard = qScopeGuard([&privateKeyData]() {
+        UA_ByteString_clear(&privateKeyData);
+    });
+
+    const auto success = loadFileToByteString(privateKeyPath, &privateKeyData);
+
+    if (!success)
+        return false;
+
+    UA_StatusCode decryptResult = UA_STATUSCODE_BADINTERNALERROR;
+    QString password;
+    bool previousTryWasInvalid = false;
+    do {
+        auto uaPassword = UA_STRING_ALLOC(password.toUtf8().constData());
+        decryptResult = UA_PKI_decryptPrivateKey(privateKeyData, uaPassword, &privateKey);
+        UA_String_clear(&uaPassword);
+
+        // The key was already DER or had no password
+        if (decryptResult == UA_STATUSCODE_GOOD)
+            return true;
+
+        // Decoding failed, a password may be required or the given password was invalid
+        if (decryptResult == UA_STATUSCODE_BADSECURITYCHECKSFAILED) {
+            emit passwordForPrivateKeyRequired(privateKeyPath, &password, previousTryWasInvalid);
+
+            // No further attempt requested
+            if (password.isEmpty())
+                return false;
+
+            previousTryWasInvalid = true;
+        }
+    } while (decryptResult == UA_STATUSCODE_BADSECURITYCHECKSFAILED);
+
+    return false;
+}
+#endif
 
 UA_ExtensionObject Open62541AsyncBackend::assembleNodeAttributes(const QOpcUaNodeCreationAttributes &nodeAttributes,
                                                                  QOpcUa::NodeClass nodeClass)

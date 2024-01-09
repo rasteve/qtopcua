@@ -332,12 +332,6 @@ void Tst_QOpcUaSecurity::connectAndDisconnectSecureEncryptedKey()
     QScopedPointer<QOpcUaClient> client(m_opcUa.createClient(backend));
     QVERIFY2(client, QStringLiteral("Loading backend failed: %1").arg(backend).toLatin1().data());
 
-    if (client->backend() == QLatin1String("open62541")) {
-        QSKIP(QStringLiteral("This test is skipped because backend %1 "
-                             "does not support encrypted keys")
-              .arg(client->backend()).toLatin1().constData());
-    }
-
     if (!client->supportedSecurityPolicies().contains(endpoint.securityPolicy())) {
         QSKIP(QStringLiteral("This test is skipped because backend %1 "
                              "does not support security policy %2")
