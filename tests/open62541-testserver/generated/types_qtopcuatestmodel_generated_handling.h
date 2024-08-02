@@ -52,6 +52,42 @@ UA_QtInnerTestStructType_equal(const UA_QtInnerTestStructType *p1, const UA_QtIn
 
 
 
+/* QtRecursiveTestStruct */
+static UA_INLINE void
+UA_QtRecursiveTestStruct_init(UA_QtRecursiveTestStruct *p) {
+    memset(p, 0, sizeof(UA_QtRecursiveTestStruct));
+}
+
+static UA_INLINE UA_QtRecursiveTestStruct *
+UA_QtRecursiveTestStruct_new(void) {
+    return (UA_QtRecursiveTestStruct*)UA_new(&UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT]);
+}
+
+static UA_INLINE UA_StatusCode
+UA_QtRecursiveTestStruct_copy(const UA_QtRecursiveTestStruct *src, UA_QtRecursiveTestStruct *dst) {
+    return UA_copy(src, dst, &UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT]);
+}
+
+UA_DEPRECATED static UA_INLINE void
+UA_QtRecursiveTestStruct_deleteMembers(UA_QtRecursiveTestStruct *p) {
+    UA_clear(p, &UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT]);
+}
+
+static UA_INLINE void
+UA_QtRecursiveTestStruct_clear(UA_QtRecursiveTestStruct *p) {
+    UA_clear(p, &UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT]);
+}
+
+static UA_INLINE void
+UA_QtRecursiveTestStruct_delete(UA_QtRecursiveTestStruct *p) {
+    UA_delete(p, &UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT]);
+}static UA_INLINE UA_Boolean
+UA_QtRecursiveTestStruct_equal(const UA_QtRecursiveTestStruct *p1, const UA_QtRecursiveTestStruct *p2) {
+    return (UA_order(p1, p2, &UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT]) == UA_ORDER_EQ);
+}
+
+
+
 /* QtStructWithOptionalFieldType */
 static UA_INLINE void
 UA_QtStructWithOptionalFieldType_init(UA_QtStructWithOptionalFieldType *p) {

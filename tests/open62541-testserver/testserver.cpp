@@ -1453,6 +1453,34 @@ UA_StatusCode TestServer::addEncoderTestModel()
         }
     }
 
+    {
+        auto data = UA_QtRecursiveTestStruct_new();
+
+        auto nestedArray = static_cast<UA_QtRecursiveTestStruct *>(UA_Array_new(2, &UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT]));
+        nestedArray[0].stringMember = UA_STRING_ALLOC("Nested string 1");
+        nestedArray[1].stringMember = UA_STRING_ALLOC("Nested string 2");
+
+        nestedArray[0].recursiveArrayMember = UA_QtRecursiveTestStruct_new();
+        nestedArray[0].recursiveArrayMemberSize = 1;
+        nestedArray[0].recursiveArrayMember->stringMember = UA_STRING_ALLOC("Innermost string");
+
+        data->recursiveArrayMember = nestedArray;
+        data->recursiveArrayMemberSize = 2;
+        data->stringMember = UA_STRING_ALLOC("Outer string");
+
+        UA_Variant var;
+        UA_Variant_init(&var);
+        UA_Variant_setScalar(&var, data, &UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT]);
+
+        result = UA_Server_writeValue(m_server, UA_NODEID_NUMERIC(4, UA_QTOPCUATESTMODELID_DECODERTESTNODES_RECURSIVESTRUCT), var);
+        UA_Variant_clear(&var);
+
+        if (result != UA_STATUSCODE_GOOD) {
+            qWarning() << "Failed to write recursive struct node";
+            return result;
+        }
+    }
+
     return result;
 }
 

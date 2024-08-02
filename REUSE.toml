@@ -1,7 +1,8 @@
 version = 1
 
 [[annotations]]
-path = ["tests/auto/security/pki/**.der",
+path = ["tests/auto/codegenerator/testids.csv",
+        "tests/auto/security/pki/**.der",
         "tests/open62541-testserver/TestModel/qtopcuatestmodel.bsd",
         "tests/open62541-testserver/TestModel/qtopcuatestmodel.csv",
         "tests/open62541-testserver/TestModel/qtopcuatestmodel.ua",

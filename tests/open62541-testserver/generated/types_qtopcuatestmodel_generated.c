@@ -14,6 +14,23 @@ static UA_DataTypeMember QtInnerTestStructType_members[1] = {
     false  /* .isOptional */
 },};
 
+/* QtRecursiveTestStruct */
+static UA_DataTypeMember QtRecursiveTestStruct_members[2] = {
+{
+    UA_TYPENAME("StringMember") /* .memberName */
+    &UA_TYPES[UA_TYPES_STRING], /* .memberType */
+    0, /* .padding */
+    false, /* .isArray */
+    false  /* .isOptional */
+},
+{
+    UA_TYPENAME("RecursiveArrayMember") /* .memberName */
+    &UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT], /* .memberType */
+    offsetof(UA_QtRecursiveTestStruct, recursiveArrayMemberSize) - offsetof(UA_QtRecursiveTestStruct, stringMember) - sizeof(UA_String), /* .padding */
+    true, /* .isArray */
+    false  /* .isOptional */
+},};
+
 /* QtStructWithOptionalFieldType */
 static UA_DataTypeMember QtStructWithOptionalFieldType_members[2] = {
 {
@@ -148,6 +165,18 @@ UA_DataType UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_COUNT] = {
     false, /* .overlayable */
     1, /* .membersSize */
     QtInnerTestStructType_members  /* .members */
+},
+/* QtRecursiveTestStruct */
+{
+    UA_TYPENAME("QtRecursiveTestStruct") /* .typeName */
+    {0, UA_NODEIDTYPE_NUMERIC, {3012LU}}, /* .typeId */
+    {0, UA_NODEIDTYPE_NUMERIC, {5016LU}}, /* .binaryEncodingId */
+    sizeof(UA_QtRecursiveTestStruct), /* .memSize */
+    UA_DATATYPEKIND_STRUCTURE, /* .typeKind */
+    false, /* .pointerFree */
+    false, /* .overlayable */
+    2, /* .membersSize */
+    QtRecursiveTestStruct_members  /* .members */
 },
 /* QtStructWithOptionalFieldType */
 {

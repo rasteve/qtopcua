@@ -6643,6 +6643,38 @@ void Tst_QOpcUaClient::encodeGenericStruct()
         QScopedPointer<QOpcUaNode> node(opcuaClient->node("ns=4;i=6027"));
         WRITE_VALUE_ATTRIBUTE(node, *ext, QOpcUa::Types::ExtensionObject);
     }
+
+    {
+        auto innermost = handler.createGenericStructValueForTypeId("ns=4;i=3012");
+        innermost.fieldsRef()["StringMember"] = QStringLiteral("Custom innermost string");
+        innermost.fieldsRef()["RecursiveArrayMember"] = QVariant::fromValue(QList<QOpcUaGenericStructValue>());
+
+        auto inner = handler.createGenericStructValueForTypeId("ns=4;i=3012");
+        inner.fieldsRef()["StringMember"] = QStringLiteral("Custom inner string");
+        inner.fieldsRef()["RecursiveArrayMember"] = QVariant::fromValue(QList<QOpcUaGenericStructValue>{ innermost });
+
+        auto value = handler.createGenericStructValueForTypeId("ns=4;i=3012");
+        value.fieldsRef()["StringMember"] = QStringLiteral("Custom outer string");
+        value.fieldsRef()["RecursiveArrayMember"] = QVariant::fromValue(QList<QOpcUaGenericStructValue>{ inner });
+
+        auto ext = handler.encode(value);
+        QVERIFY(ext);
+        QCOMPARE(ext->encodingTypeId(), value.structureDefinition().defaultEncodingId());
+
+        const auto decoded = handler.decode(*ext);
+
+        QCOMPARE(decoded->fields().value("StringMember"), QStringLiteral("Custom outer string"));
+        const auto innerDecoded = decoded->fields().value("RecursiveArrayMember").value<QList<QOpcUaGenericStructValue>>();
+        QCOMPARE(innerDecoded.size(), 1);
+        QCOMPARE(innerDecoded.at(0).fields().value("StringMember"), QStringLiteral("Custom inner string"));
+        const auto innermostDecoded = innerDecoded.at(0).fields().value("RecursiveArrayMember").value<QList<QOpcUaGenericStructValue>>();
+        QCOMPARE(innermostDecoded.size(), 1);
+        QCOMPARE(innermostDecoded.at(0).fields().value("StringMember"), QStringLiteral("Custom innermost string"));
+
+        QScopedPointer<QOpcUaNode> node(opcuaClient->node("ns=4;i=6029"));
+        QVERIFY(node != nullptr);
+        WRITE_VALUE_ATTRIBUTE(node, *ext, QOpcUa::Types::ExtensionObject);
+    }
 }
 
 void Tst_QOpcUaClient::encodeCustomGenericStruct()

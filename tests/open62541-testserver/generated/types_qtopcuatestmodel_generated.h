@@ -19,7 +19,7 @@ _UA_BEGIN_DECLS
  * Every type is assigned an index in an array containing the type descriptions.
  * These descriptions are used during type handling (copying, deletion,
  * binary encoding, ...). */
-#define UA_TYPES_QTOPCUATESTMODEL_COUNT 7
+#define UA_TYPES_QTOPCUATESTMODEL_COUNT 8
 extern UA_EXPORT UA_DataType UA_TYPES_QTOPCUATESTMODEL[UA_TYPES_QTOPCUATESTMODEL_COUNT];
 
 /* QtInnerTestStructType */
@@ -29,13 +29,23 @@ typedef struct {
 
 #define UA_TYPES_QTOPCUATESTMODEL_QTINNERTESTSTRUCTTYPE 0
 
+/* QtRecursiveTestStruct */
+typedef struct UA_QtRecursiveTestStruct UA_QtRecursiveTestStruct;
+struct UA_QtRecursiveTestStruct {
+    UA_String stringMember;
+    size_t recursiveArrayMemberSize;
+    UA_QtRecursiveTestStruct *recursiveArrayMember;
+};
+
+#define UA_TYPES_QTOPCUATESTMODEL_QTRECURSIVETESTSTRUCT 1
+
 /* QtStructWithOptionalFieldType */
 typedef struct {
     UA_Double mandatoryMember;
     UA_Double *optionalMember;
 } UA_QtStructWithOptionalFieldType;
 
-#define UA_TYPES_QTOPCUATESTMODEL_QTSTRUCTWITHOPTIONALFIELDTYPE 1
+#define UA_TYPES_QTOPCUATESTMODEL_QTSTRUCTWITHOPTIONALFIELDTYPE 2
 
 /* QtTestStructWithDataValue */
 typedef struct {
@@ -43,7 +53,7 @@ typedef struct {
     UA_Variant variantMember;
 } UA_QtTestStructWithDataValue;
 
-#define UA_TYPES_QTOPCUATESTMODEL_QTTESTSTRUCTWITHDATAVALUE 2
+#define UA_TYPES_QTOPCUATESTMODEL_QTTESTSTRUCTWITHDATAVALUE 3
 
 /* QtTestStructWithDiagnosticInfo */
 typedef struct {
@@ -52,7 +62,7 @@ typedef struct {
     UA_DiagnosticInfo *diagnosticInfoArrayMember;
 } UA_QtTestStructWithDiagnosticInfo;
 
-#define UA_TYPES_QTOPCUATESTMODEL_QTTESTSTRUCTWITHDIAGNOSTICINFO 3
+#define UA_TYPES_QTOPCUATESTMODEL_QTTESTSTRUCTWITHDIAGNOSTICINFO 4
 
 /* QtTestUnionType */
 typedef enum {
@@ -72,7 +82,7 @@ typedef struct {
     } fields;
 } UA_QtTestUnionType;
 
-#define UA_TYPES_QTOPCUATESTMODEL_QTTESTUNIONTYPE 4
+#define UA_TYPES_QTOPCUATESTMODEL_QTTESTUNIONTYPE 5
 
 /* QtTestEnumeration */
 typedef enum {
@@ -85,7 +95,7 @@ typedef enum {
 
 UA_STATIC_ASSERT(sizeof(UA_QtTestEnumeration) == sizeof(UA_Int32), enum_must_be_32bit);
 
-#define UA_TYPES_QTOPCUATESTMODEL_QTTESTENUMERATION 5
+#define UA_TYPES_QTOPCUATESTMODEL_QTTESTENUMERATION 6
 
 /* QtTestStructType */
 typedef struct {
@@ -100,7 +110,7 @@ typedef struct {
     UA_QtInnerTestStructType *nestedStructArrayMember;
 } UA_QtTestStructType;
 
-#define UA_TYPES_QTOPCUATESTMODEL_QTTESTSTRUCTTYPE 6
+#define UA_TYPES_QTOPCUATESTMODEL_QTTESTSTRUCTTYPE 7
 
 
 _UA_END_DECLS
