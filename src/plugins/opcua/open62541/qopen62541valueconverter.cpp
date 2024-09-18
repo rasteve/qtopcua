@@ -1,7 +1,12 @@
 // Copyright (C) 2017 The Qt Company Ltd.
 // SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only
 
+#ifdef USE_SYSTEM_OPEN62541
+#include <open62541/types.h>
+#else
 #include "qopen62541.h"
+#endif
+
 #include "qopen62541utils.h"
 #include "qopen62541valueconverter.h"
 

@@ -91,9 +91,20 @@ if (QT_FEATURE_open62541 AND NOT QT_FEATURE_system_open62541)
     endif()
 endif()
 
+if (QT_FEATURE_system_open62541)
+    find_package(open62541)
+    if (OPEN62541_SYSTEM_ENCRYPTION)
+        find_package(WrapOpenSSL)
+        target_link_libraries(simulationserver PRIVATE
+            WrapOpenSSL::WrapOpenSSL
+        )
+    endif()
+    target_compile_definitions(simulationserver PRIVATE USE_SYSTEM_OPEN62541)
+endif()
+
 if(QT_FEATURE_system_open62541 OR NOT QT_FEATURE_open62541)
     target_link_libraries(simulationserver PRIVATE
-        open62541
+        open62541::open62541
     )
 endif()
 

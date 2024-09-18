@@ -4,7 +4,12 @@
 #ifndef QOPEN62541VALUECONVERTER_H
 #define QOPEN62541VALUECONVERTER_H
 
+#ifdef USE_SYSTEM_OPEN62541
+#include <open62541/common.h>
+#else
 #include "qopen62541.h"
+#endif
+
 #include <QtOpcUa/qopcuanode.h>
 #include <QtOpcUa/qopcuatype.h>
 #include <QtOpcUa/qopcuabinarydataencoding.h>

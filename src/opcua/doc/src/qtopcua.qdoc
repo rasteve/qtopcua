@@ -392,42 +392,24 @@
     tag using the following commands:
 
     \code
-        cmake -DUA_ENABLE_AMALGAMATION=ON -DUA_AMALGAMATION_MULTIARCH=ON -DUA_ENABLE_SUBSCRIPTIONS_EVENTS=ON -DUA_ENABLE_HISTORIZING=ON
+        cmake -DUA_ENABLE_AMALGAMATION=ON -DUA_AMALGAMATION_MULTIARCH=ON /path/to/open62541-source
         make
     \endcode
 
-    In case you want to build a custom version of the Open62541 plugin, Open62541 v1.4.8 built with the same options as above is required.
-
-    The following options must be passed to cmake when building with open62541 installed to a custom location:
-
-    \code
-        -DINPUT_open62541=system -DOPEN62541_INCDIR=/path/to/sdk/include -DOPEN62541_LIBDIR=/path/to/sdk/lib
-    \endcode
-
-    \table
-    \header
-    \li Setting
-    \li Value
-    \row
-    \li OPEN62541_INCDIR
-    \li The directory which contains open62541.h
-    \row
-    \li OPEN62541_LIBDIR
-    \li The directory which contains the library file
-    \endtable
-
-    For example, the following options can be used for building the open62541 plugin using a static build
-    directly from its build directory without installing it:
-    \code
-        -DOPEN62541_INCDIR=/path/to/open62541/build -DOPEN62541_LIBDIR=/path/to/open62541/build/bin
-    \endcode
-
-    The output of the configuration step indicates whether the detection was successful:
+    In case you want to build a custom version of the open62541 plugin, an installed open62541 v1.4.8 built with the default options is required.
+    To enable encryption support, the open62541 build must be configured using the following parameters:
 
     \code
-        Open62541 .............................. yes
+        cmake -DUA_ENABLE_ENCRYPTION=OPENSSL /path/to/open62541-source
     \endcode
 
+    The following options must be passed to cmake when building with a custom open62541 installation.
+
+    \code
+        -DINPUT_open62541=system -DCMAKE_PREFIX_PATH=/path/to/open62541-install-dir
+    \endcode
+
+    The \a CMAKE_PREFIX_PATH is only required if open62541 is installed in a location cmake doesn't check by default.
 */
 
 /*!

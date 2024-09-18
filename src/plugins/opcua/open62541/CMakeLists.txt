@@ -58,6 +58,11 @@ qt_internal_extend_target(QOpen62541Plugin CONDITION QT_FEATURE_open62541_securi
         WrapOpenSSL::WrapOpenSSL
 )
 
+qt_internal_extend_target(QOpen62541Plugin CONDITION QT_FEATURE_open62541_security AND WrapOpenSSL_FOUND AND QT_FEATURE_system_open62541 AND OPEN62541_SYSTEM_ENCRYPTION
+    LIBRARIES
+        WrapOpenSSL::WrapOpenSSL
+)
+
 qt_internal_extend_target(QOpen62541Plugin CONDITION QT_FEATURE_open62541 AND WIN32 AND MSVC AND NOT QT_FEATURE_system_open62541
     LIBRARIES
         iphlpapi.lib
@@ -90,12 +95,12 @@ if (QT_FEATURE_open62541 AND NOT QT_FEATURE_system_open62541)
     endif()
 endif()
 
+if (QT_FEATURE_system_open62541)
+    find_package(open62541 REQUIRED)
+    target_compile_definitions(QOpen62541Plugin PRIVATE USE_SYSTEM_OPEN62541)
+endif()
+
 qt_internal_extend_target(QOpen62541Plugin CONDITION QT_FEATURE_system_open62541 OR NOT QT_FEATURE_open62541
     LIBRARIES
-        open62541
+        open62541::open62541
 )
-
-#qt_internal_extend_target(QOpen62541Plugin CONDITION WIN32 AND MSVC AND (QT_FEATURE_system_open62541 OR NOT QT_FEATURE_open62541)
-#    PUBLIC_LIBRARIES
-#        open62541.lib
-#)

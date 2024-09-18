@@ -4,7 +4,16 @@
 #ifndef TESTSERVER_H
 #define TESTSERVER_H
 
-#include <qopen62541.h>
+#ifdef USE_SYSTEM_OPEN62541
+#include <open62541/server_config_default.h>
+#include <open62541/plugin/historydata/history_data_gathering_default.h>
+#include <open62541/plugin/historydata/history_data_backend_memory.h>
+#include <open62541/plugin/historydata/history_database_default.h>
+#include <open62541/plugin/accesscontrol_default.h>
+#else
+#include "qopen62541.h"
+#endif
+
 #include <QtOpcUa/qopcuatype.h>
 
 #include <QtCore/QDateTime>

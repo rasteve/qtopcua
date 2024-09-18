@@ -3,6 +3,11 @@
 
 #include "testserver.h"
 
+#ifdef USE_SYSTEM_OPEN62541
+#include <open62541/plugin/log_stdout.h>
+#include <open62541/plugin/pki_default.h>
+#endif
+
 #include "generated/namespace_qtopcuatestmodel_generated.h"
 #include "generated/types_qtopcuatestmodel_generated.h"
 #include "generated/types_qtopcuatestmodel_generated_handling.h"
