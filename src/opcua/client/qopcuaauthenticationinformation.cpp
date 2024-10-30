@@ -40,6 +40,7 @@ QT_BEGIN_NAMESPACE
     \inqmlmodule QtOpcUa
     \brief The OPC UA authentication information.
     \since QtOpcUa 5.13
+    \deprecated [6.9]
 
     This class holds the information necessary to perform a login on a server.
 

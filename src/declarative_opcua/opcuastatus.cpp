@@ -11,6 +11,7 @@ QT_BEGIN_NAMESPACE
     \inqmlmodule QtOpcUa
     \brief Status code of an OPC UA function.
     \since QtOpcUa 5.13
+    \deprecated [6.9]
 
     This QML element contains information about the result status of an OPC UA action.
     The most common use case is to check if a call was successful

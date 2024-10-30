@@ -21,6 +21,8 @@
     \ingroup qmlmodules
 
     For more information on the Qt OPC UA module, see the \l{Qt OPC UA} module documentation.
+
+    The QML API has been marked as deprecated in Qt 6.9 and will be removed in a future version.
 */
 
 /*!
@@ -33,8 +35,7 @@
     The \l{Qt OPC UA Overview}{Qt OPC UA} module implements a Qt API to interact with OPC UA
     servers on top of the \l{https://www.open62541.org/}{open62541} library.
 
-    The QML API is still in development but are available as a technology preview.
-    This means those parts are unstable, likely to change, and provided as a convenience only.
+    The QML API has been marked as deprecated in Qt 6.9 and will be removed in a future version.
 
     \section1 Using the Module
 

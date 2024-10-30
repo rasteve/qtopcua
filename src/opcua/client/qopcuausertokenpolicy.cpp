@@ -18,6 +18,7 @@ QT_BEGIN_NAMESPACE
     \inqmlmodule QtOpcUa
     \brief The OPC UA ApplicationDescription.
     \since QtOpcUa 5.13
+    \deprecated [6.9]
 
     The user token policy contains information about an user token accepted by the server.
 */

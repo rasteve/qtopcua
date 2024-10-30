@@ -19,6 +19,7 @@ QT_BEGIN_NAMESPACE
     \inqmlmodule QtOpcUa
     \brief The OPC UA EndpointDescription.
     \since QtOpcUa 5.13
+    \deprecated [6.9]
 
     An endpoint description contains information about an endpoint and how to connect to it.
 */

@@ -9,6 +9,7 @@ QT_BEGIN_NAMESPACE
     \qmltype OpcUaNodeIdType
     \inqmlmodule QtOpcUa
     \brief Common base class for all node IDs.
+    \deprecated [6.9]
     \internal
 
     This base class provides common functions for node ID related classes.
