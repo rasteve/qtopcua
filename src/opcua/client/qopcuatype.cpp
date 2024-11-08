@@ -516,7 +516,7 @@ QT_BEGIN_NAMESPACE
     \value GoodEntryReplaced The data or event field was successfully replaced in the historical database.
     \value UncertainDataSubNormal The value is derived from multiple values and has less than the required number of Good values.
     \value GoodNoData No data exists for the requested time range or event filter.
-    \value GoodMoreData The data or event field was successfully replaced in the historical database.
+    \value GoodMoreData More data is available in the time range beyond the number of values requested.
     \value BadAggregateListMismatch The requested number of Aggregates does not match the requested number of NodeIds.
     \value BadAggregateNotSupported The requested Aggregate is not support by the server.
     \value BadAggregateInvalidInputs The aggregate value could not be derived due to invalid data inputs.
@@ -524,8 +524,10 @@ QT_BEGIN_NAMESPACE
     \value GoodDataIgnored The request specifies fields which are not valid for the EventType or cannot be saved by the historian.
     \value BadRequestNotAllowed The request was rejected by the server because it did not meet the criteria set by the server.
     \value BadRequestNotComplete The request has not been processed by the server yet.
+    \value BadTransactionPending The operation is not allowed because a transaction is in progress.
     \value BadTicketRequired The device identity needs a ticket before it can be accepted.
     \value BadTicketInvalid The device identity needs a ticket before it can be accepted.
+    \value BadLocked The requested operation is not allowed, because the Node is locked by a different application.
     \value GoodEdited The value does not come from the real source and has been edited by the server.
     \value GoodPostActionFailed There was an error in execution of these post-actions.
     \value UncertainDominantValueChanged The related EngineeringUnit has been changed but the Variable Value is still provided based on the previous unit.
@@ -829,7 +831,7 @@ QString QOpcUa::namespace0Id(QOpcUa::NodeIds::Namespace0 id)
     identifier which is part of the OPC Foundation's NodeIds.csv file,
     \l {QOpcUa::NodeIds::Namespace0} {Unknown} is returned.
 
-    If Qt OPC UA has been configured with -no-feature-ns0idnames,
+    If Qt OPC UA has been configured with FEATURE_ns0idnames=OFF,
     the check if the numeric identifier is part of the NodeIds.csv
     file is omitted. If the node id is in namespace 0 and has a
     numeric identifier, the identifier is returned regardless if it
@@ -859,7 +861,7 @@ QOpcUa::NodeIds::Namespace0 QOpcUa::namespace0IdFromNodeId(const QString &nodeId
 /*!
     Returns the name of the namespace 0 node id \a id.
 
-    If \a id is unknown or Qt OPC UA has been configured with -no-feature-ns0idnames,
+    If \a id is unknown or Qt OPC UA has been configured with FEATURE_ns0idnames=OFF,
     an empty string is returned.
 */
 QString QOpcUa::namespace0IdName(QOpcUa::NodeIds::Namespace0 id)

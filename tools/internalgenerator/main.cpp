@@ -5,6 +5,8 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QFile>
+#include <QMap>
+#include <QRegularExpression>
 
 /*
  * This generator should be run if there is a new version of the NodeIds.csv or StatusCode.csv file
@@ -14,7 +16,7 @@
  * Qt OPC UA must be configured with FEATURE_internalgenerator to enable building the generator.
  *
  * Usage:
- * qtopcua-internal-generator -n NodeIds.csv -s StatusCode.csv -o /path/to/qtopcua
+ * qtopcua-internalgenerator -n NodeIds.csv -s StatusCode.csv -o /path/to/qtopcua
  *
  * This updates qopcuanodeids.h, qopcuanodeids.cpp, qopcuatype.h, qopcuatype.cpp,
  * opcuastatus_p.h and opcuastatus.cpp with the most recent status codes and node ids.
@@ -72,6 +74,29 @@ public:
     QString value;
     QString comment;
 };
+
+QMap<QString, QString> parseExistingNodeIds(const QString &existingHeaderFilePath)
+{
+    QMap<QString, QString> result;
+
+    QFile file(existingHeaderFilePath);
+
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open" << existingHeaderFilePath << "for reading";
+        return result;
+    }
+
+    QTextStream in(&file);
+    while (!in.atEnd()) {
+        const static QRegularExpression lineRegex(QStringLiteral("([a-zA-Z0-9_]+) = ([0-9]+),"));
+        const auto match = lineRegex.match(in.readLine());
+        if (match.hasMatch() && match.capturedLength(1) > 0 && match.capturedLength(2) > 0) {
+            result[match.captured(1)] = match.captured(2);
+        }
+    }
+
+    return result;
+}
 
 QList<NodeId> parseNodeIds(const QString &path)
 {
@@ -266,16 +291,39 @@ int main(int argc, char *argv[])
         const auto nodeIdsHeaderPath = QStringLiteral("%1/src/opcua/client/qopcuanodeids.h").arg(parser.value(oOption));
         const auto nodeIdsSourcePath = QStringLiteral("%1/src/opcua/client/qopcuanodeids.cpp").arg(parser.value(oOption));
 
-        const auto nodeIds = parseNodeIds(parser.value(nOption));
+        const auto existingNodeIds = parseExistingNodeIds(nodeIdsHeaderPath);
+        const auto newNodeIds = parseNodeIds(parser.value(nOption));
 
-        if (nodeIds.isEmpty()) {
+        if (newNodeIds.isEmpty()) {
             qWarning() << "No node ids were found in the file";
             return EXIT_FAILURE;
         }
 
-        success = patchNodeIdsHeader(nodeIds, nodeIdsHeaderPath);
+        QList<NodeId> mergedIds;
+
+        for (const auto &entry : existingNodeIds.asKeyValueRange())
+            mergedIds.push_back({ entry.first, entry.second });
+
+        for (const auto &entry : newNodeIds) {
+            if (!existingNodeIds.contains(entry.name)) {
+                mergedIds.push_back(entry);
+            } else if (entry.value != existingNodeIds.value(entry.name)) {
+                qFatal() << "The value of" << entry.name << "has changed from"
+                         << existingNodeIds.value(entry.name) << "to" << entry.value
+                         << " - please check manually";
+            }
+        }
+
+        std::sort(mergedIds.begin(), mergedIds.end(), [](const NodeId &a, const NodeId &b) {
+            const auto idA = a.value.toInt();
+            const auto idB = b.value.toInt();
+
+            return idA == idB ? a.name < b.name : idA < idB;
+        });
+
+        success = patchNodeIdsHeader(mergedIds, nodeIdsHeaderPath);
         if (success)
-            patchNodeIdsSource(nodeIds, nodeIdsSourcePath);
+            patchNodeIdsSource(mergedIds, nodeIdsSourcePath);
         else
             return EXIT_FAILURE;
     }

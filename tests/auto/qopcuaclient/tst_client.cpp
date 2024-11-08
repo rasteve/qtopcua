@@ -1167,6 +1167,14 @@ void Tst_QOpcUaClient::compareNodeIds()
         QCOMPARE(identifierType, 'b');
         QCOMPARE(identifier, QStringLiteral("UXQgZnR3IQ=="));
     }
+
+#ifndef QT_OPCUA_NO_NS0IDNAMES
+    // This ID is a duplicate since the last generator run
+    const auto enumEntry = QOpcUa::namespace0IdFromNodeId("ns=0;i=25584");
+    QCOMPARE(enumEntry, QOpcUa::NodeIds::Namespace0::WellKnownRole_SecurityKeyServerPush);
+    const auto nameStr = QOpcUa::namespace0IdName(QOpcUa::NodeIds::Namespace0::WellKnownRole_SecurityKeyServerPush);
+    QCOMPARE(nameStr, QStringLiteral("WellKnownRole_SecurityKeyServer"));
+#endif
 }
 
 void Tst_QOpcUaClient::getNodeForIdTypes()
