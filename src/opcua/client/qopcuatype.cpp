@@ -110,6 +110,8 @@ QT_BEGIN_NAMESPACE
     \value HasAttachedComponent Indicates that the subcomponent is attached to the component
     \value IsExecutingOn The type for a reference to relate a software component to its current execution environment
     \value HasPushedSecurityGroup The type for a reference to a pushed security group
+    \value [since 6.9] AlarmSuppressionGroupMember Connects alarm instances or bool variables to an alarm group
+    \value [since 6.9] HasReferenceDescription Connects a node of any node class to a reference description variable.
 */
 
 /*!
@@ -141,6 +143,10 @@ QT_BEGIN_NAMESPACE
     \value Executable True if the node is currently executable. Only relevant for Method nodes.
     \value UserExecutable Same as Executable, but for the current user.
     \value [since 6.7] DataTypeDefinition The data type definition attribute of a data type node.
+    \value [since 6.9] RolePermissions Permissions for all roles with access to the node.
+    \value [since 6.9] UserRolePermissions Permissions for all roles of the requesting session.
+    \value [since 6.9] AccessRestrictions The AccessRestrictions of the node.
+    \value [since 6.9] AccessLevelEx Contains a bit mask. Each bit corresponds to an access capability (OPC UA 1.05 part 3, 8.58).
 */
 
 /*!
@@ -172,13 +178,17 @@ QT_BEGIN_NAMESPACE
     \value ValueRank The ValueRank attribute is writable.
     \value WriteMask The WriteMask attribute is writable.
     \value ValueForVariableType The Value attribute of a variable type is writable.
+    \value [since 6.9] DataTypeDefinition The DataTypeDefinition attribute is writable.
+    \value [since 6.9] RolePermissions The RolePermissions attribute is writable.
+    \value [since 6.9] AccessRestrictions The AccessRestrictions attribute is writable.
+    \value [since 6.9] AccessLevelEx The AccessLevelEx attribute is writable.
 */
 
 /*!
     \enum QOpcUa::AccessLevelBit
 
     This enum contains all possible bits for the AccessLevel and UserAccessLevel node attributes
-    defined in OPC UA 1.05 part 3, 8.60.
+    defined in OPC UA 1.05 part 3, 8.57.
 
     \value None No read access to the Value attribute is permitted.
     \value CurrentRead The current value can be read.
@@ -188,6 +198,29 @@ QT_BEGIN_NAMESPACE
     \value SemanticChange The property variable generates SemanticChangeEvents.
     \value StatusWrite The status code of the value is writable.
     \value TimestampWrite The SourceTimestamp is writable.
+*/
+
+/*!
+    \enum QOpcUa::AccessLevelExBit
+    \since 6.9
+
+    This enum contains all possible bits for the AccessLevelEx node attribute
+    defined in OPC UA 1.05 part 3, 8.58.
+
+    \value None No read access to the Value attribute is permitted.
+    \value CurrentRead The current value can be read.
+    \value CurrentWrite The current value can be written.
+    \value HistoryRead The history of the value is readable.
+    \value HistoryWrite The history of the value is writable.
+    \value SemanticChange The property variable generates SemanticChangeEvents.
+    \value StatusWrite The status code of the value is writable.
+    \value TimestampWrite The SourceTimestamp is writable.
+    \value NonatomicRead Indicates if the read is non-atomic.
+    \value NonatomicWrite Indicates if the write is non-atomic.
+    \value WriteFullArrayOnly Indicates if writing an index range of an array is supported.
+    \value NoSubDataTypes Indicates if a write also accepts subtypes of the type.
+    \value NonVolatile Indicates if the variable is volatile.
+    \value Constant Indicates if the variable's value is constant.
 */
 
 /*!

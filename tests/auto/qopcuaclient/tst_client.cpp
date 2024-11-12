@@ -532,6 +532,10 @@ private slots:
 
     defineDataMethod(readDataTypeDefinition_data)
     void readDataTypeDefinition();
+    defineDataMethod(readAccessLevelEx_data)
+    void readAccessLevelEx();
+    defineDataMethod(readNewPermissionAttributes_data)
+    void readNewPermissionAttributes();
 
     defineDataMethod(getRootNode_data)
     void getRootNode();
@@ -1458,6 +1462,55 @@ void Tst_QOpcUaClient::readDataTypeDefinition()
 
     qDebug() << node->valueAttribute();
     QCOMPARE(node->attribute(QOpcUa::NodeAttribute::DataTypeDefinition).canConvert<QOpcUaStructureDefinition>(), true);
+}
+
+void Tst_QOpcUaClient::readAccessLevelEx()
+{
+    QFETCH(QOpcUaClient *, opcuaClient);
+    OpcuaConnector connector(opcuaClient, m_endpoint);
+
+    QScopedPointer<QOpcUaNode> node(opcuaClient->node("ns=2;s=Demo.Static.Arrays.UInt32"));
+    QVERIFY (node != nullptr);
+
+    QSignalSpy spy(node.get(), &QOpcUaNode::attributeRead);
+    node->readAttributes(QOpcUa::NodeAttribute::AccessLevelEx);
+
+    spy.wait();
+
+    QCOMPARE(spy.size(), 1);
+    QCOMPARE(spy.at(0).at(0).value<QOpcUa::NodeAttributes>().testFlag(QOpcUa::NodeAttribute::AccessLevelEx), true);
+
+    QCOMPARE(node->attributeError(QOpcUa::NodeAttribute::AccessLevelEx), QOpcUa::UaStatusCode::Good);
+    QCOMPARE(node->attribute(QOpcUa::NodeAttribute::AccessLevelEx).value<quint32>(), 3);
+    QOpcUa::AccessLevelEx ex(node->attribute(QOpcUa::NodeAttribute::AccessLevelEx).value<quint32>());
+    QVERIFY(ex.testFlag(QOpcUa::AccessLevelExBit::CurrentRead));
+    QVERIFY(ex.testFlag(QOpcUa::AccessLevelExBit::CurrentWrite));
+}
+
+void Tst_QOpcUaClient::readNewPermissionAttributes()
+{
+    QFETCH(QOpcUaClient *, opcuaClient);
+    OpcuaConnector connector(opcuaClient, m_endpoint);
+
+    QScopedPointer<QOpcUaNode> node(opcuaClient->node("ns=2;s=Demo.Static.Arrays.UInt32"));
+    QVERIFY (node != nullptr);
+
+    QSignalSpy spy(node.get(), &QOpcUaNode::attributeRead);
+
+    node->readAttributes(QOpcUa::NodeAttribute::RolePermissions | QOpcUa::NodeAttribute::UserRolePermissions
+                         | QOpcUa::NodeAttribute::AccessRestrictions);
+
+    spy.wait();
+
+    QCOMPARE(spy.size(), 1);
+    QCOMPARE(spy.at(0).at(0).value<QOpcUa::NodeAttributes>().testFlag(QOpcUa::NodeAttribute::RolePermissions), true);
+    QCOMPARE(spy.at(0).at(0).value<QOpcUa::NodeAttributes>().testFlag(QOpcUa::NodeAttribute::UserRolePermissions), true);
+    QCOMPARE(spy.at(0).at(0).value<QOpcUa::NodeAttributes>().testFlag(QOpcUa::NodeAttribute::AccessRestrictions), true);
+
+    // The open62541 server doesn't yet support the three attributes, so we can only check if a read was attempted
+    QCOMPARE(node->attributeError(QOpcUa::NodeAttribute::RolePermissions), QOpcUa::UaStatusCode::BadAttributeIdInvalid);
+    QCOMPARE(node->attributeError(QOpcUa::NodeAttribute::UserRolePermissions), QOpcUa::UaStatusCode::BadAttributeIdInvalid);
+    QCOMPARE(node->attributeError(QOpcUa::NodeAttribute::AccessRestrictions), QOpcUa::UaStatusCode::BadAttributeIdInvalid);
 }
 
 void Tst_QOpcUaClient::getRootNode()
