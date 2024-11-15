@@ -1,6 +1,6 @@
 /* THIS IS A SINGLE-FILE DISTRIBUTION CONCATENATED FROM THE OPEN62541 SOURCES
  * visit http://open62541.org/ for information about this software
- * Git-Revision: v1.4.4
+ * Git-Revision: v1.4.8
  */
 
 /*
@@ -30,10 +30,10 @@
  * ----------------- */
 #define UA_OPEN62541_VER_MAJOR 1
 #define UA_OPEN62541_VER_MINOR 4
-#define UA_OPEN62541_VER_PATCH 4
+#define UA_OPEN62541_VER_PATCH 8
 #define UA_OPEN62541_VER_LABEL "" /* Release candidate label, etc. */
-#define UA_OPEN62541_VER_COMMIT "v1.4.4"
-#define UA_OPEN62541_VERSION "v1.4.4"
+#define UA_OPEN62541_VER_COMMIT "v1.4.8"
+#define UA_OPEN62541_VERSION "v1.4.8"
 
 /**
  * Architecture
@@ -23367,7 +23367,7 @@ typedef struct UA_DataTypeArray {
  * If the member is an array, the offset points to the (size_t) length field.
  * (The array pointer comes after the length field without any padding.) */
 #ifdef UA_ENABLE_TYPEDESCRIPTION
-UA_Boolean
+UA_Boolean UA_EXPORT
 UA_DataType_getStructMember(const UA_DataType *type,
                             const char *memberName,
                             size_t *outOffset,
@@ -23378,7 +23378,7 @@ UA_DataType_getStructMember(const UA_DataType *type,
 /* Test if the data type is a numeric builtin data type (via the typeKind field
  * of UA_DataType). This includes integers and floating point numbers. Not
  * included are Boolean, DateTime, StatusCode and Enums. */
-UA_Boolean
+UA_Boolean UA_EXPORT
 UA_DataType_isNumeric(const UA_DataType *type);
 
 /**
@@ -45745,9 +45745,9 @@ struct UA_ClientConfig {
      * message. */
     UA_ExtensionObject userIdentityToken; /* Configured User-Identity Token */
     UA_MessageSecurityMode securityMode;  /* None, Sign, SignAndEncrypt. The
-                                           * default is invalid. This indicates
-                                           * the client to select any matching
-                                           * endpoint. */
+                                           * default is "invalid". This
+                                           * indicates the client to select any
+                                           * matching endpoint. */
     UA_String securityPolicyUri; /* SecurityPolicy for the SecureChannel. An
                                   * empty string indicates the client to select
                                   * any matching SecurityPolicy. */
@@ -45760,27 +45760,16 @@ struct UA_ClientConfig {
                               * connection when the Session is lost. */
 
     /**
-     * If either endpoint or userTokenPolicy has been set (at least one non-zero
-     * byte in either structure), then the selected Endpoint and UserTokenPolicy
-     * overwrite the settings in the basic connection configuration. The
-     * userTokenPolicy array in the EndpointDescription is ignored. The selected
-     * userTokenPolicy is set in the dedicated configuration field.
-     *
-     * If the advanced configuration is not set, the client will write to it the
-     * selected Endpoint and UserTokenPolicy during GetEndpoints.
-     *
-     * The information in the advanced configuration is used during reconnect
-     * when the SecureChannel was broken. */
+     * If either endpoint or userTokenPolicy has been set, then they are used
+     * directly. Otherwise this information comes from the GetEndpoints response
+     * from the server (filtered and selected for the SecurityMode, etc.). */
     UA_EndpointDescription endpoint;
     UA_UserTokenPolicy userTokenPolicy;
 
     /**
      * If the EndpointDescription has not been defined, the ApplicationURI
-     * constrains the servers considered in the FindServers service and the
-     * Endpoints considered in the GetEndpoints service.
-     *
-     * If empty the applicationURI is not used to filter.
-     */
+     * filters the servers considered in the FindServers service and the
+     * Endpoints considered in the GetEndpoints service. */
     UA_String applicationUri;
 
     /**
@@ -45823,6 +45812,7 @@ struct UA_ClientConfig {
      * secure channel is selected.*/
     size_t authSecurityPoliciesSize;
     UA_SecurityPolicy *authSecurityPolicies;
+
     /* SecurityPolicyUri for the Authentication. */
     UA_String authSecurityPolicyUri;
 

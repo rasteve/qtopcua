@@ -461,9 +461,6 @@ ManagedUaNodeId TestServer::addEmptyArrayVariable(const UA_NodeId &folder, const
     attr.value.arrayLength = 0;
     attr.value.type = &UA_TYPES[UA_TYPES_BOOLEAN];
     attr.value.data = UA_EMPTY_ARRAY_SENTINEL;
-    attr.value.arrayDimensionsSize = 1;
-    attr.value.arrayDimensions = UA_UInt32_new();
-    *attr.value.arrayDimensions = 0;
 
     UA_QualifiedName variableName;
     variableName.namespaceIndex = variableNodeId.namespaceIndex;

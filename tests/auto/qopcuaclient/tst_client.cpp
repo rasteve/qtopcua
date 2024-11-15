@@ -1100,7 +1100,14 @@ void Tst_QOpcUaClient::requestEndpoints()
     QCOMPARE(desc[0].serverCertificate(), QByteArray());
 #endif
 
+#ifdef SERVER_SUPPORTS_SECURITY
+    const int numTokensExpected = opcuaClient->supportedSecurityPolicies().contains(
+                QStringLiteral("http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15"))
+            ?  21 : 15;
+    QCOMPARE(desc[0].userIdentityTokens().size(), numTokensExpected);
+#else
     QCOMPARE(desc[0].userIdentityTokens().size(), 6);
+#endif
     QCOMPARE(desc[0].userIdentityTokens()[0].policyId(), QStringLiteral("open62541-anonymous-policy-none#None"));
     QCOMPARE(desc[0].userIdentityTokens()[0].tokenType(), QOpcUaUserTokenPolicy::TokenType::Anonymous);
 

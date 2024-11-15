@@ -200,13 +200,14 @@ QStringList QOpen62541Client::supportedSecurityPolicies() const
         "http://opcfoundation.org/UA/SecurityPolicy#None"
     };
 #ifdef UA_ENABLE_ENCRYPTION
+    // Sort by strength
     if (m_hasSha1SignatureSupport) {
         result.append("http://opcfoundation.org/UA/SecurityPolicy#Basic128Rsa15");
         result.append("http://opcfoundation.org/UA/SecurityPolicy#Basic256");
     }
-    result.append("http://opcfoundation.org/UA/SecurityPolicy#Aes256_Sha256_RsaPss");
-    result.append("http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256");
     result.append("http://opcfoundation.org/UA/SecurityPolicy#Aes128_Sha256_RsaOaep");
+    result.append("http://opcfoundation.org/UA/SecurityPolicy#Basic256Sha256");
+    result.append("http://opcfoundation.org/UA/SecurityPolicy#Aes256_Sha256_RsaPss");
 #endif
 
     return result;
