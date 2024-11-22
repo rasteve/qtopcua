@@ -230,6 +230,10 @@ void QOpcUaEndpointDescription::setUserIdentityTokens(const QList<QOpcUaUserToke
 
 /*!
     Returns the URI of the security policy.
+
+    The Basic128Rsa15 and Basic256 security policies are deprecated and should only be used
+    for backward compatibility if the server doesn't support any of the policies currently
+    considered as secure.
 */
 QString QOpcUaEndpointDescription::securityPolicy() const
 {
@@ -238,6 +242,10 @@ QString QOpcUaEndpointDescription::securityPolicy() const
 
 /*!
     Sets the URI of the security policy to \a securityPolicy.
+
+    The Basic128Rsa15 and Basic256 security policies are deprecated and should only be used
+    for backward compatibility if the server doesn't support any of the policies currently
+    considered as secure.
 */
 void QOpcUaEndpointDescription::setSecurityPolicy(const QString &securityPolicy)
 {

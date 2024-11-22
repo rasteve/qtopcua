@@ -94,6 +94,10 @@ QOpcUaUserTokenPolicy::~QOpcUaUserTokenPolicy()
 
 /*!
     Returns the URI of the security policy required when encrypting or signing the token for ActivateSession.
+
+    The Basic128Rsa15 and Basic256 security policies are deprecated and should only be used
+    for backward compatibility if the server doesn't support any of the policies currently
+    considered as secure.
 */
 QString QOpcUaUserTokenPolicy::securityPolicy() const
 {
@@ -102,6 +106,10 @@ QString QOpcUaUserTokenPolicy::securityPolicy() const
 
 /*!
     Sets the URI of the security policy to \a securityPolicy.
+
+    The Basic128Rsa15 and Basic256 security policies are deprecated and should only be used
+    for backward compatibility if the server doesn't support any of the policies currently
+    considered as secure.
 */
 void QOpcUaUserTokenPolicy::setSecurityPolicy(const QString &securityPolicy)
 {
