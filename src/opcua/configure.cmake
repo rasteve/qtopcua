@@ -90,6 +90,7 @@ qt_feature("system-open62541" PRIVATE SYSTEM_LIBRARY
 qt_feature("ns0idnames" PRIVATE
     LABEL "Support for namespace 0 NodeId names"
     PURPOSE "Provides names for the QOpcUa::NodeIds::Namespace0 enum."
+    CONDITION NOT MSVC
 )
 qt_feature("internalgenerator" PRIVATE
     LABEL "Internal code generator"
