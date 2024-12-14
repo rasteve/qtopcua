@@ -89,7 +89,8 @@ MappingFileGenerator::MappingError MappingFileGenerator::generateMappingHeader()
             return UnanbleToWrite;
     file.setFileName(dir.absoluteFilePath(fileName));
 
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return UnanbleToWrite;
     QTextStream output(&file);
 
     // Print header (if present)
@@ -187,7 +188,9 @@ MappingFileGenerator::MappingError MappingFileGenerator::generateMappingCpp()
             return UnanbleToWrite;
     file.setFileName(dir.absoluteFilePath(fileName));
 
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return UnanbleToWrite;
+
     QTextStream output(&file);
 
     // Print header (if present)

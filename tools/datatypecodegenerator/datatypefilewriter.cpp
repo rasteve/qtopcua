@@ -1191,7 +1191,8 @@ DataTypeFileWriter::GeneratingError DataTypeFileWriter::writeEnumeratedTypes()
         if (!dir.mkpath(m_path))
             return UnableToWrite;
     file.setFileName(dir.absoluteFilePath(fileName));
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return UnableToWrite;
     QTextStream output(&file);
     writeLicenseHeader(output);
 
@@ -1242,7 +1243,8 @@ DataTypeFileWriter::GeneratingError DataTypeFileWriter::generateFile(const XmlEl
         if (!dir.mkpath(m_path))
             return UnableToWrite;
     file.setFileName(dir.absoluteFilePath(fileName));
-    file.open(QIODevice::WriteOnly | QIODevice::Text);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+        return UnableToWrite;
     QTextStream output(&file);
     writeLicenseHeader(output);
 
