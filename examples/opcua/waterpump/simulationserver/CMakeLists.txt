@@ -14,7 +14,7 @@ endif()
 
 set(INSTALL_EXAMPLEDIR "${INSTALL_EXAMPLESDIR}/opcua/waterpump/simulationserver")
 
-find_package(Qt6 REQUIRED COMPONENTS Core OpcUa)
+find_package(Qt6 REQUIRED COMPONENTS Core OpcUaPrivate)
 
 qt_standard_project_setup()
 
