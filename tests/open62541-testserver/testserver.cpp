@@ -1112,7 +1112,8 @@ void TestServer::readHistoryEventCallback(UA_Server *server, void *hdbContext, c
         historyData[i]->eventsSize = eventsToReturn.size();
         historyData[i]->events = static_cast<UA_HistoryEventFieldList *>(UA_Array_new(eventsToReturn.size(), &UA_TYPES[UA_TYPES_HISTORYEVENTFIELDLIST]));
 
-        for (int j = 0; j < eventsToReturn.size(); ++j) {
+        size_t j = 0;
+        for (auto it = eventsToReturn.constBegin(); it != eventsToReturn.constEnd(); ++it, ++j) {
             historyData[i]->events[j].eventFieldsSize = historyReadDetails->filter.selectClausesSize;
             historyData[i]->events[j].eventFields = static_cast<UA_Variant *>(
                 UA_Array_new(historyData[i]->events[j].eventFieldsSize, &UA_TYPES[UA_TYPES_VARIANT]));
@@ -1126,9 +1127,9 @@ void TestServer::readHistoryEventCallback(UA_Server *server, void *hdbContext, c
                 auto path = historyReadDetails->filter.selectClauses[k].browsePath;
 
                 if (UA_QualifiedName_equal(path, &timeName)) {
-                    UA_Variant_setScalarCopy(&historyData[i]->events[j].eventFields[k], &eventsToReturn.keys().at(j), &UA_TYPES[UA_TYPES_DATETIME]);
+                    UA_Variant_setScalarCopy(&historyData[i]->events[j].eventFields[k], &it.key(), &UA_TYPES[UA_TYPES_DATETIME]);
                 } else if (UA_QualifiedName_equal(path, &messageName)) {
-                    UA_Variant_setScalarCopy(&historyData[i]->events[j].eventFields[k], &eventsToReturn.values().at(j), &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
+                    UA_Variant_setScalarCopy(&historyData[i]->events[j].eventFields[k], &it.value(), &UA_TYPES[UA_TYPES_LOCALIZEDTEXT]);
                 }
             }
         }
